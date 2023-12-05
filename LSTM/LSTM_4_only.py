@@ -105,3 +105,6 @@ plt.show()
 #              label=f'Actual_{selected_columns[i]}', marker='o')
 #     plt.plot(time_steps_test, y_pred_inverse[:, i],
 #              label=f'Predicted_{selected_columns[i]}', marker='o')
+# so sánh
+# ARIMA
+# Decision Tree

@@ -18,6 +18,7 @@ class MyMainWindow(QMainWindow):
         super().__init__()
 
         self.df_selected = self.load_data()
+        self.model = None  # Thêm biến model vào lớp
         self.setup_ui()
 
     def load_data(self):
@@ -48,40 +49,37 @@ class MyMainWindow(QMainWindow):
         self.v_layout.addWidget(self.canvas)
 
     def calculate_market_indices(self):
-        weekly_volatility_usd_w_lstm, _, _ = self.calculate_weekly_volatility_lstm()
-        lstm_predictions = self.build_lstm_model()
+        weekly_volatility_usd_w_lstm, weekly_volatility_dt_w_lstm, weekly_volatility_v_w_lstm = self.calculate_weekly_volatility_lstm()
+        moving_average_lstm = self.calculate_moving_average_lstm()
 
-        if lstm_predictions is not None:
-            arima_predictions = self.build_arima_model()
-            decision_tree_predictions = self.build_decision_tree_model()
-            random_forest_predictions = self.build_random_forest_model()
+        arima_predictions = self.build_arima_model()
+        decision_tree_predictions = self.build_decision_tree_model()
+        random_forest_predictions = self.build_random_forest_model()
 
-            arima_rmse = np.sqrt(mean_squared_error(
-                self.df_selected['USD_W'].iloc[-len(arima_predictions):], arima_predictions))
-            lstm_rmse = np.sqrt(mean_squared_error(
-                self.df_selected['USD_W'].iloc[-len(lstm_predictions):], lstm_predictions))
-            decision_tree_rmse = np.sqrt(mean_squared_error(
-                self.df_selected['USD_W'].iloc[-len(decision_tree_predictions):], decision_tree_predictions))
-            random_forest_rmse = np.sqrt(mean_squared_error(
-                self.df_selected['USD_W'].iloc[-len(random_forest_predictions):], random_forest_predictions))
+        arima_rmse = np.sqrt(mean_squared_error(
+            self.df_selected['USD_W'].iloc[-len(arima_predictions):], arima_predictions))
+        lstm_rmse = self.calculate_lstm_rmse()
+        decision_tree_rmse = np.sqrt(mean_squared_error(
+            self.df_selected['USD_W'].iloc[-len(decision_tree_predictions):], decision_tree_predictions))
+        random_forest_rmse = np.sqrt(mean_squared_error(
+            self.df_selected['USD_W'].iloc[-len(random_forest_predictions):], random_forest_predictions))
 
-            print(f"ARIMA RMSE: {arima_rmse}")
-            print(f"LSTM RMSE: {lstm_rmse}")
-            print(f"Decision Tree RMSE: {decision_tree_rmse}")
-            print(f"Random Forest RMSE: {random_forest_rmse}")
+        print(f"ARIMA RMSE: {arima_rmse}")
+        print(f"LSTM RMSE: {lstm_rmse}")
+        print(f"Decision Tree RMSE: {decision_tree_rmse}")
+        print(f"Random Forest RMSE: {random_forest_rmse}")
 
-            self.plot_data(weekly_volatility_usd_w_lstm,
-                           "Biến động hàng tuần - USD_W (LSTM)")
-            self.plot_data(arima_predictions, "ARIMA Predictions - USD_W")
-            self.plot_data(decision_tree_predictions,
-                           "Decision Tree Predictions - USD_W")
-            self.plot_data(random_forest_predictions,
-                           "Random Forest Predictions - USD_W")
-            self.plot_data(lstm_predictions, "LSTM Predictions - USD_W")
+        self.plot_data(weekly_volatility_usd_w_lstm,
+                       "Biến động hàng tuần - USD_W (LSTM)")
+        self.plot_data(arima_predictions, "ARIMA Predictions - USD_W")
+        self.plot_data(decision_tree_predictions,
+                       "Decision Tree Predictions - USD_W")
+        self.plot_data(random_forest_predictions,
+                       "Random Forest Predictions - USD_W")
 
-            result_text = f"Biến động hàng tuần - USD_W (LSTM): {weekly_volatility_usd_w_lstm:.4f}\nARIMA RMSE: {arima_rmse:.4f}\nLSTM RMSE: {lstm_rmse:.4f}\nDecision Tree RMSE: {decision_tree_rmse:.4f}\nRandom Forest RMSE: {random_forest_rmse:.4f}"
+        result_text = f"Biến động hàng tuần - USD_W (LSTM): {weekly_volatility_usd_w_lstm:.4f}\nARIMA RMSE: {arima_rmse:.4f}\nLSTM RMSE: {lstm_rmse:.4f}\nDecision Tree RMSE: {decision_tree_rmse:.4f}\nRandom Forest RMSE: {random_forest_rmse:.4f}"
 
-            self.result_label.setText(result_text)
+        self.result_label.setText(result_text)
 
     def calculate_weekly_volatility_lstm(self):
         try:
@@ -130,39 +128,18 @@ class MyMainWindow(QMainWindow):
             print(f"Error in calculate_weekly_volatility: {e}")
             return None, None, None
 
-    def build_lstm_model(self):
-        try:
-            scaler = MinMaxScaler()
-            df_scaled = scaler.fit_transform(self.df_selected)
+    def calculate_moving_average_lstm(self):
+        moving_average = self.df_selected['USD_W'].rolling(window=10).mean()
 
-            train_size = int(len(df_scaled) * 0.8)
-            train_data, test_data = df_scaled[:
-                                              train_size], df_scaled[train_size:]
+        plt.figure(figsize=(12, 6))
+        plt.plot(moving_average, label='Moving Average', marker='o')
+        plt.title('Moving Average')
+        plt.xlabel('Time Steps')
+        plt.ylabel('Value')
+        plt.legend()
+        plt.show()
 
-            time_steps = 10
-            X_train, y_train = self.prepare_data(train_data, time_steps)
-            X_test, y_test = self.prepare_data(test_data, time_steps)
-
-            model = Sequential()
-            model.add(LSTM(units=50, activation='relu', input_shape=(
-                X_train.shape[1], X_train.shape[2])))
-            model.add(Dense(units=3))
-            model.compile(optimizer='adam', loss='mse')
-
-            model.fit(X_train, y_train, epochs=50, batch_size=32,
-                      validation_data=(X_test, y_test), shuffle=False)
-
-            mse = model.evaluate(X_test, y_test)
-            print(f"Mean Squared Error on Test Data (LSTM): {mse}")
-
-            y_pred = model.predict(X_test)
-            y_pred_inverse = scaler.inverse_transform(y_pred)
-
-            return y_pred_inverse
-
-        except Exception as e:
-            print(f"Error in build_lstm_model: {e}")
-            return None
+        return moving_average[-1]
 
     def build_arima_model(self):
         history = list(self.df_selected['USD_W'][:-20])
@@ -189,6 +166,18 @@ class MyMainWindow(QMainWindow):
         model.fit(X_train, y_train)
         random_forest_predictions = model.predict(X_train[-20:])
         return random_forest_predictions
+
+    def calculate_lstm_rmse(self):
+        time_steps = 10
+        X_test, y_test = self.prepare_data(
+            self.df_selected['USD_W'].iloc[-len(self.df_selected):].values, time_steps)
+        X_test_reshaped = np.reshape(
+            X_test, (X_test.shape[0], X_test.shape[1], 1))
+        lstm_predictions = self.model.predict(X_test_reshaped)
+        y_test_inverse_usd_w = scaler.inverse_transform(y_test)[:, 0]
+        lstm_rmse = np.sqrt(mean_squared_error(
+            y_test_inverse_usd_w, lstm_predictions[:, 0]))
+        return lstm_rmse
 
     def plot_data(self, data, title):
         self.canvas.axes.clear()
