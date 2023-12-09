@@ -1,0 +1,4 @@
+1. loop 1000
+2. render từng trường dữ liệu
+3. đưa kết quả vào docs
+4. tìm hiểu kỹ lại các mô hình
