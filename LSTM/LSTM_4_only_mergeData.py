@@ -59,7 +59,7 @@ print(f"Mean Squared Error on Test Data: {mse}")
 
 # Dự báo trên tập kiểm tra
 y_pred = model.predict(X_test)
-print("y_pred:", y_pred)
+# print("y_pred:", y_pred)
 
 # -------- trực quan hóa mo hình
 # Đảo ngược chuẩn hóa để có giá trị gốc

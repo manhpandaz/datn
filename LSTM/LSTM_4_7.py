@@ -12,6 +12,10 @@ import matplotlib.pyplot as plt
 # Đọc dữ liệu từ nguồn
 df = pd.read_excel('data/DulieuVang_dau_Tygia.xlsx')
 
+print("mỗi vài dữ liệu liệu đầu tiên:")
+print(df.head())
+
+print(f"Tổng số lượng dữ liệu: {len(df)}")
 # Chọn các trường dữ liệu cần thiết
 selected_columns = ['DATE', 'USD_W', 'DT_W', 'V_W']
 df_selected = df[selected_columns]
@@ -41,15 +45,15 @@ def prepare_data(data, time_steps):
     return np.array(X), np.array(y)
 
 
-time_steps = 10
+time_steps = 100
 X_train, y_train = prepare_data(train_data, time_steps)
 X_test, y_test = prepare_data(test_data, time_steps)
 
 # Xây dựng mô hình LSTM
 model_lstm = Sequential()
-model_lstm.add(LSTM(units=50, activation='relu',
+model_lstm.add(LSTM(units=50, activation='sigmoid',
                input_shape=(X_train.shape[1], X_train.shape[2])))
-model_lstm.add(Dense(units=3))  # 3 units cho 3 trường dữ liệu
+model_lstm.add(Dense(units=3))
 model_lstm.compile(optimizer='adam', loss='mse')
 
 # Huấn luyện mô hình LSTM
