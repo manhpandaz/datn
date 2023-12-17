@@ -45,13 +45,13 @@ def prepare_data(data, time_steps):
     return np.array(X), np.array(y)
 
 
-time_steps = 100
+time_steps = 10
 X_train, y_train = prepare_data(train_data, time_steps)
 X_test, y_test = prepare_data(test_data, time_steps)
 
 # Xây dựng mô hình LSTM
 model_lstm = Sequential()
-model_lstm.add(LSTM(units=50, activation='sigmoid',
+model_lstm.add(LSTM(units=50, activation='relu',
                input_shape=(X_train.shape[1], X_train.shape[2])))
 model_lstm.add(Dense(units=3))
 model_lstm.compile(optimizer='adam', loss='mse')
@@ -85,15 +85,15 @@ mse_rf = mean_squared_error(y_test, y_pred_rf, multioutput='raw_values')
 # In kết quả MSE cho từng cột dữ liệu
 print("MSE (LSTM) for each column:")
 for i, column_name in enumerate(selected_columns[1:]):
-    print(f"{column_name}: {mse_lstm[i]:.4f}")
+    print(f"{column_name}: {mse_lstm[i]}")  # :.4f
 
 print("\nMSE (Decision Tree) for each column:")
 for i, column_name in enumerate(selected_columns[1:]):
-    print(f"{column_name}: {mse_dt[i]:.4f}")
+    print(f"{column_name}: {mse_dt[i]}")
 
 print("\nMSE (Random Forest) for each column:")
 for i, column_name in enumerate(selected_columns[1:]):
-    print(f"{column_name}: {mse_rf[i]:.4f}")
+    print(f"{column_name}: {mse_rf[i]}")
 
 # Trực quan hóa kết quả cho cột USD_W của LSTM
 y_test_inverse_lstm = scaler.inverse_transform(y_test)

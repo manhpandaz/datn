@@ -1,0 +1,1 @@
+Epochs (Số lượng epoch) : xác định số lần mô hình duyệt qua tập dư liệu huấn luyện. 

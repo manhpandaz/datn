@@ -2,3 +2,7 @@
 2. render từng trường dữ liệu
 3. đưa kết quả vào docs
 4. tìm hiểu kỹ lại các mô hình
+-------
+5. các siêu tham số của mô hình
+6. tìm mô hình so sánh hợp lý hơn
+6. viết lại docs

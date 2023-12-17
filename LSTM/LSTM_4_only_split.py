@@ -19,6 +19,19 @@ df_selected['DATE'] = pd.to_datetime(df_selected['DATE'])
 # Đặt 'DATE' làm chỉ số của DataFrame
 df_selected.set_index('DATE', inplace=True)
 
+# Trực quan hóa dữ liệu gốc
+plt.figure(figsize=(12, 6))
+
+plt.plot(df_selected.index, df_selected['USD_W'], label='USD_W', marker='o')
+plt.plot(df_selected.index, df_selected['DT_W'], label='DT_W', marker='o')
+plt.plot(df_selected.index, df_selected['V_W'], label='V_W', marker='o')
+
+plt.title('Original Data - USD_W, DT_W, V_W')
+plt.xlabel('Date')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
 # Chuẩn hóa dữ liệu sử dụng Min-Max Scaler
 scaler = MinMaxScaler()
 df_scaled = scaler.fit_transform(df_selected)
@@ -54,21 +67,18 @@ model.fit(X_train, y_train, epochs=50, batch_size=32,
           validation_data=(X_test, y_test), shuffle=False)
 
 # Đánh giá mô hình trên tập kiểm tra
-mse = model.evaluate(X_test, y_test)
-print(f"Mean Squared Error on Test Data: {mse}")
+# mse = model.evaluate(X_test, y_test)
+# print(f"Mean Squared Error on Test Data: {mse}")
 
 # Dự báo trên tập kiểm tra
 y_pred = model.predict(X_test)
 
 # Tính MSE cho từng cột dữ liệu
 
-column_names = df_selected.columns[1:]
-# mse_per_column = []
-for i in range(y_test.shape[1]):
-    mse_column = mean_squared_error(y_test[:, i], y_pred[:, i])
-    # mse_per_column.append(mse_column)
-    print(f"Mean Squared Error for Column {column_names}: {mse_column}")
 
+for i, column in enumerate(selected_columns[1:]):
+    mse_column = mean_squared_error(y_test[:, i], y_pred[:, i])
+    print(f"Mean Squared Error for Column {column}: {mse_column}")
 
 # Đảo ngược chuẩn hóa để có giá trị gốc
 y_test_inverse = scaler.inverse_transform(y_test)
@@ -106,3 +116,31 @@ plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
 plt.show()
+
+# plt.subplot(1, 3, 1)  # Lưới 1x3, ô ở vị trí 1
+# plt.plot(time_steps_test, y_test_inverse[:, 0], label='Actual', marker='o')
+# plt.plot(time_steps_test, y_pred_inverse[:, 0], label='Predicted', marker='o')
+# plt.title('USD_W - Actual vs. Predicted')
+# plt.xlabel('Time Steps')
+# plt.ylabel('Value')
+# plt.legend()
+
+# # Trực quan hóa kết quả cho cột DT_W
+# plt.subplot(1, 3, 2)  # Lưới 1x3, ô ở vị trí 2
+# plt.plot(time_steps_test, y_test_inverse[:, 1], label='Actual', marker='o')
+# plt.plot(time_steps_test, y_pred_inverse[:, 1], label='Predicted', marker='o')
+# plt.title('DT_W - Actual vs. Predicted')
+# plt.xlabel('Time Steps')
+# plt.ylabel('Value')
+# plt.legend()
+
+# # Trực quan hóa kết quả cho cột V_W
+# plt.subplot(1, 3, 3)  # Lưới 1x3, ô ở vị trí 3
+# plt.plot(time_steps_test, y_test_inverse[:, 2], label='Actual', marker='o')
+# plt.plot(time_steps_test, y_pred_inverse[:, 2], label='Predicted', marker='o')
+# plt.title('V_W - Actual vs. Predicted')
+# plt.xlabel('Time Steps')
+# plt.ylabel('Value')
+# plt.legend()
+
+# plt.show()

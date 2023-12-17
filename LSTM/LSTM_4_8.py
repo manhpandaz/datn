@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from statsmodels.tsa.arima.model import ARIMA
-from fbprophet import Prophet
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 import matplotlib.pyplot as plt
@@ -12,11 +12,10 @@ import matplotlib.pyplot as plt
 # Đọc dữ liệu từ nguồn
 df = pd.read_excel('data/DulieuVang_dau_Tygia.xlsx')
 
-print("Một số dữ liệu đầu tiên:")
+print("mỗi vài dữ liệu liệu đầu tiên:")
 print(df.head())
 
 print(f"Tổng số lượng dữ liệu: {len(df)}")
-
 # Chọn các trường dữ liệu cần thiết
 selected_columns = ['DATE', 'USD_W', 'DT_W', 'V_W']
 df_selected = df[selected_columns]
@@ -54,52 +53,159 @@ X_test, y_test = prepare_data(test_data, time_steps)
 model_lstm = Sequential()
 model_lstm.add(LSTM(units=50, activation='relu',
                input_shape=(X_train.shape[1], X_train.shape[2])))
-# Output layer có 3 units tương ứng với 3 cột dữ liệu
+# model_lstm.add(Dense(25))
 model_lstm.add(Dense(units=3))
+# Adding the output layer
+# model_lstm.add(Dense(1))
 model_lstm.compile(optimizer='adam', loss='mse')
 
 # Huấn luyện mô hình LSTM
-model_lstm.fit(X_train, y_train, epochs=1000, batch_size=32,
+model_lstm.fit(X_train, y_train, epochs=100, batch_size=32,
                validation_data=(X_test, y_test), shuffle=False)
 
 # Dự báo trên tập kiểm tra cho LSTM
 y_pred_lstm = model_lstm.predict(X_test)
 
-#  ARIMA
-for i in range(1, 4):
-    model_arima = ARIMA(train_data[:, i-1], order=(5, 1, 0))
-    model_arima_fit = model_arima.fit()
-    y_pred_arima = model_arima_fit.forecast(steps=len(test_data))
-    mse_arima = mean_squared_error(test_data[:, i-1], y_pred_arima)
-    print(f"MSE (ARIMA - {selected_columns[i]}): {mse_arima:.4f}")
+# Xây dựng mô hình Decision Tree
+model_dt = DecisionTreeRegressor()
+model_dt.fit(X_train.reshape((X_train.shape[0], -1)), y_train)
 
-# Prophet
-for i in range(1, 4):
-    prophet_data = pd.DataFrame(
-        {'ds': df_selected.index, 'y': df_selected[selected_columns[i]].values})
-    prophet_data.columns = ['ds', 'y']
+# Dự báo trên tập kiểm tra cho Decision Tree
+y_pred_dt = model_dt.predict(X_test.reshape((X_test.shape[0], -1)))
 
-    model_prophet = Prophet()
-    model_prophet.fit(prophet_data)
+# Xây dựng mô hình Random Forest
+model_rf = RandomForestRegressor()
+model_rf.fit(X_train.reshape((X_train.shape[0], -1)), y_train)
 
-    future = model_prophet.make_future_dataframe(periods=len(test_data))
-    forecast = model_prophet.predict(future)
-    y_pred_prophet = forecast.tail(len(test_data))['yhat'].values
-    mse_prophet = mean_squared_error(test_data[:, i-1], y_pred_prophet)
-    print(f"MSE (Prophet - {selected_columns[i]}): {mse_prophet:.4f}")
+# Dự báo trên tập kiểm tra cho Random Forest
+y_pred_rf = model_rf.predict(X_test.reshape((X_test.shape[0], -1)))
+
+# Đánh giá mô hình và tính MSE cho từng trường dữ liệu
+mse_lstm = mean_squared_error(y_test, y_pred_lstm, multioutput='raw_values')
+mse_dt = mean_squared_error(y_test, y_pred_dt, multioutput='raw_values')
+mse_rf = mean_squared_error(y_test, y_pred_rf, multioutput='raw_values')
+
+# In kết quả MSE cho từng cột dữ liệu
+print("MSE (LSTM) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_lstm[i]}")  # :.4f
+
+print("\nMSE (Decision Tree) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_dt[i]}")
+
+print("\nMSE (Random Forest) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_rf[i]}")
 
 # Trực quan hóa kết quả cho cột USD_W của LSTM
-# (Code vẽ biểu đồ cho LSTM ở đây)
+y_test_inverse_lstm = scaler.inverse_transform(y_test)
+y_pred_inverse_lstm = scaler.inverse_transform(y_pred_lstm)
 
-# Trực quan hóa kết quả cho cột USD_W của ARIMA
-# plt.figure(figsize=(12, 6))
-# plt.plot(df_selected.index[-len(test_data):], test_data[:, 0], label='Actual (USD_W)', marker='o')
-# plt.plot(df_selected.index[-len(test_data):], y_pred_arima, label='Predicted (ARIMA - USD_W)', marker='o')
-# plt.title('USD_W - Actual vs. Predicted (ARIMA)')
-# plt.xlabel('Time Steps')
-# plt.ylabel('Value')
-# plt.legend()
-# plt.show()
+time_steps_test = df_selected.index[train_data.shape[0] + time_steps:]
 
-# Trực quan hóa kết quả cho cột USD_W của Prophet
-# (Code vẽ biểu đồ cho Prophet ở đây)
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 0], label='Actual (USD_W)', marker='o')
+plt.plot(time_steps_test,
+         y_pred_inverse_lstm[:, 0], label='Predicted (USD_W)', marker='o')
+plt.title('USD_W - Actual vs. Predicted (LSTM)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột DT_W của LSTM
+
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 1], label='Actual (DT_W)', marker='o')
+plt.plot(time_steps_test,
+         y_pred_inverse_lstm[:, 1], label='Predicted (DT_W)', marker='o')
+plt.title('DT_W - Actual vs. Predicted (LSTM)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột V_W của LSTM
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 2], label='Actual (V_W)', marker='o')
+plt.plot(time_steps_test,
+         y_pred_inverse_lstm[:, 2], label='Predicted (V_W)', marker='o')
+plt.title('V_W - Actual vs. Predicted (LSTM)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột USD_W của Decision Tree
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 0], label='Actual (USD_W)', marker='o')
+plt.plot(time_steps_test, y_pred_dt[:, 0],
+         label='Predicted (USD_W)', marker='o')
+plt.title('USD_W - Actual vs. Predicted (Decision Tree)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột DT_W của Decision Tree
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 1], label='Actual (DT_W)', marker='o')
+plt.plot(time_steps_test, y_pred_dt[:, 1],
+         label='Predicted (DT_W)', marker='o')
+plt.title('DT_W - Actual vs. Predicted (Decision Tree)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột V_W của Decision Tree
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 2], label='Actual (V_W)', marker='o')
+plt.plot(time_steps_test, y_pred_dt[:, 2], label='Predicted (V_W)', marker='o')
+plt.title('V_W - Actual vs. Predicted (Decision Tree)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột USD_W của Random Forest
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 0], label='Actual (USD_W)', marker='o')
+plt.plot(time_steps_test, y_pred_rf[:, 0],
+         label='Predicted (USD_W)', marker='o')
+plt.title('USD_W - Actual vs. Predicted (Random Forest)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột DT_W của Random Forest
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 1], label='Actual (DT_W)', marker='o')
+plt.plot(time_steps_test, y_pred_rf[:, 1],
+         label='Predicted (DT_W)', marker='o')
+plt.title('DT_W - Actual vs. Predicted (Random Forest)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
+
+# Trực quan hóa kết quả cho cột V_W của Random Forest
+plt.figure(figsize=(12, 6))
+plt.plot(time_steps_test,
+         y_test_inverse_lstm[:, 2], label='Actual (V_W)', marker='o')
+plt.plot(time_steps_test, y_pred_rf[:, 2], label='Predicted (V_W)', marker='o')
+plt.title('V_W - Actual vs. Predicted (Random Forest)')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
