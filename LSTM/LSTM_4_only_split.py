@@ -74,8 +74,6 @@ model.fit(X_train, y_train, epochs=50, batch_size=32,
 y_pred = model.predict(X_test)
 
 # Tính MSE cho từng cột dữ liệu
-
-
 for i, column in enumerate(selected_columns[1:]):
     mse_column = mean_squared_error(y_test[:, i], y_pred[:, i])
     print(f"Mean Squared Error for Column {column}: {mse_column}")

@@ -3,10 +3,8 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_squared_error
-# from sklearn.tree import DecisionTreeRegressor
-# from sklearn.ensemble import RandomForestRegressor
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, GRU, SimpleRNN, Dense, Dropout
+from keras.models import Sequential
+from keras.layers import LSTM, GRU, SimpleRNN, Dense, Dropout
 from keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -52,39 +50,39 @@ time_steps = 10
 X_train, y_train = prepare_data(train_data, time_steps)
 X_test, y_test = prepare_data(test_data, time_steps)
 
-# Hàm tạo mô hình cho LSTM với các tham số cần tối ưu
+# Tạo mô hình cho LSTM với các tham số cần tối ưu
 
 
-def create_lstm_model(units=50, activation='tanh', dropout_rate=0.0, learning_rate=0.001):
+def create_lstm_model(units=50, activation='relu', dropout_rate=0.0, learning_rate=0.001, batch_size=32):
     model = Sequential()
     model.add(LSTM(units=units, activation=activation,
-              input_shape=(X_train.shape[1], X_train.shape[2])))
+                   input_shape=(X_train.shape[1], X_train.shape[2])))
     model.add(Dropout(dropout_rate))
     model.add(Dense(units=3))
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     model.compile(optimizer=optimizer, loss='mse')
     return model
 
-# Hàm tạo mô hình cho GRU với các tham số cần tối ưu
+# Tạo mô hình cho GRU với các tham số cần tối ưu
 
 
-def create_gru_model(units=50, activation='tanh', dropout_rate=0.0, learning_rate=0.001):
+def create_gru_model(units=50, activation='relu', dropout_rate=0.0, learning_rate=0.001, batch_size=32):
     model = Sequential()
     model.add(GRU(units=units, activation=activation,
-              input_shape=(X_train.shape[1], X_train.shape[2])))
+                  input_shape=(X_train.shape[1], X_train.shape[2])))
     model.add(Dropout(dropout_rate))
     model.add(Dense(units=3))
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     model.compile(optimizer=optimizer, loss='mse')
     return model
 
-# Hàm tạo mô hình cho RNN với các tham số cần tối ưu
+# Tạo mô hình cho RNN với các tham số cần tối ưu
 
 
-def create_rnn_model(units=50, activation='tanh', dropout_rate=0.0, learning_rate=0.001):
+def create_rnn_model(units=50, activation='relu', dropout_rate=0.0, learning_rate=0.001, batch_size=32):
     model = Sequential()
     model.add(SimpleRNN(units=units, activation=activation,
-              input_shape=(X_train.shape[1], X_train.shape[2])))
+                        input_shape=(X_train.shape[1], X_train.shape[2])))
     model.add(Dropout(dropout_rate))
     model.add(Dense(units=3))
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -103,45 +101,50 @@ rnn_model = KerasRegressor(build_fn=create_rnn_model,
 # Định nghĩa các giá trị thử nghiệm cho các siêu tham số
 param_grid = {
     'units': [16, 32, 64, 128, 256],
-    'activation': ['sigmoid', 'tanh', 'relu'],
+    'activation': ['tanh', 'relu'],
     'dropout_rate': [0.1, 0.2, 0.25, 0.5],
-    'learning_rate': [0.01,0.001, 0.005]
+    'learning_rate': [0.001, 0.005, 0.01],
+    'batch_size': [16, 32, 64, 128, 256],
 }
 
 # Tìm kiếm siêu tham số bằng GridSearchCV cho LSTM
-grid_lstm = GridSearchCV(
-    estimator=lstm_model, param_grid=param_grid, scoring='neg_mean_squared_error', cv=3)
-grid_lstm_result = grid_lstm.fit(X_train, y_train)
+grid_search_lstm = GridSearchCV(estimator=lstm_model, param_grid=param_grid,
+                                scoring='neg_mean_squared_error', cv=3, verbose=1)
+grid_search_lstm_result = grid_search_lstm.fit(X_train, y_train)
 
 # In kết quả tìm kiếm siêu tham số cho LSTM
-print("Best LSTM: %f using %s" %
-      (grid_lstm_result.best_score_, grid_lstm_result.best_params_))
-best_lstm_model = grid_lstm.best_estimator_.model
+print("Best LSTM: %f using %s" % (grid_search_lstm_result.best_score_,
+      grid_search_lstm_result.best_params_))
+best_lstm_model = grid_search_lstm.best_estimator_.model
 
 # Tìm kiếm siêu tham số bằng GridSearchCV cho GRU
-grid_gru = GridSearchCV(estimator=gru_model, param_grid=param_grid,
-                        scoring='neg_mean_squared_error', cv=3)
-grid_gru_result = grid_gru.fit(X_train, y_train)
+grid_search_gru = GridSearchCV(estimator=gru_model, param_grid=param_grid,
+                               scoring='neg_mean_squared_error', cv=3, verbose=1)
+grid_search_gru_result = grid_search_gru.fit(X_train, y_train)
 
 # In kết quả tìm kiếm siêu tham số cho GRU
-print("Best GRU: %f using %s" %
-      (grid_gru_result.best_score_, grid_gru_result.best_params_))
-best_gru_model = grid_gru.best_estimator_.model
+print("Best GRU: %f using %s" % (grid_search_gru_result.best_score_,
+      grid_search_gru_result.best_params_))
+best_gru_model = grid_search_gru.best_estimator_.model
 
 # Tìm kiếm siêu tham số bằng GridSearchCV cho RNN
-grid_rnn = GridSearchCV(estimator=rnn_model, param_grid=param_grid,
-                        scoring='neg_mean_squared_error', cv=3)
-grid_rnn_result = grid_rnn.fit(X_train, y_train)
+grid_search_rnn = GridSearchCV(estimator=rnn_model, param_grid=param_grid,
+                               scoring='neg_mean_squared_error', cv=3, verbose=1)
+grid_search_rnn_result = grid_search_rnn.fit(X_train, y_train)
 
 # In kết quả tìm kiếm siêu tham số cho RNN
-print("Best RNN: %f using %s" %
-      (grid_rnn_result.best_score_, grid_rnn_result.best_params_))
-best_rnn_model = grid_rnn.best_estimator_.model
+print("Best RNN: %f using %s" % (grid_search_rnn_result.best_score_,
+      grid_search_rnn_result.best_params_))
+best_rnn_model = grid_search_rnn.best_estimator_.model
 
-# Huấn luyện mô hình với dữ liệu huấn luyện
-best_lstm_model.fit(X_train, y_train, epochs=50, batch_size=32, verbose=0)
-best_gru_model.fit(X_train, y_train, epochs=50, batch_size=32, verbose=0)
-best_rnn_model.fit(X_train, y_train, epochs=50, batch_size=32, verbose=0)
+# Huấn luyện mô hình LSTM với siêu tham số tốt nhất
+best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32, verbose=0)
+
+# Huấn luyện mô hình GRU với siêu tham số tốt nhất
+best_gru_model.fit(X_train, y_train, epochs=1000, batch_size=32, verbose=0)
+
+# Huấn luyện mô hình RNN với siêu tham số tốt nhất
+best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=32, verbose=0)
 
 # Dự báo trên tập kiểm tra cho LSTM, GRU, và RNN
 y_pred_lstm = best_lstm_model.predict(X_test)
@@ -165,3 +168,30 @@ for i, column_name in enumerate(selected_columns[1:]):
 print("\nMSE (RNN) for each column:")
 for i, column_name in enumerate(selected_columns[1:]):
     print(f"{column_name}: {mse_rnn[i]}")
+
+# Trực quan hóa kết quả cho mỗi cột dữ liệu từ cả 3 mô hình
+for i, column_name in enumerate(selected_columns[1:]):
+    plt.figure(figsize=(15, 8))
+
+    # Vẽ dữ liệu thực tế
+    plt.plot(df_selected.index[-len(y_test):],
+             y_test[:, i], label='Actual', color='black')
+
+    # Vẽ dự báo từ mô hình LSTM
+    plt.plot(df_selected.index[-len(y_test):], y_pred_lstm[:, i],
+             label='LSTM Prediction', linestyle='dashed', color='blue')
+
+    # Vẽ dự báo từ mô hình GRU
+    plt.plot(df_selected.index[-len(y_test):], y_pred_gru[:, i],
+             label='GRU Prediction', linestyle='dashed', color='green')
+
+    # Vẽ dự báo từ mô hình RNN
+    plt.plot(df_selected.index[-len(y_test):], y_pred_rnn[:, i],
+             label='RNN Prediction', linestyle='dashed', color='red')
+
+    # Thiết lập các thuộc tính đồ thị
+    plt.title(f'Comparison of Predictions for {column_name}')
+    plt.xlabel('Date')
+    plt.ylabel('Scaled Value')
+    plt.legend()
+    plt.show()

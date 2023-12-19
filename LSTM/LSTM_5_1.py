@@ -24,6 +24,11 @@ df_selected = df[selected_columns]
 # Chuyển đổi cột 'DATE' thành kiểu dữ liệu datetime
 df_selected['DATE'] = pd.to_datetime(df_selected['DATE'])
 
+# Xóa dữ liệu trùng lặp
+df_selected = df_selected[~df_selected.duplicated()]
+# Xử lý giá trị NaN: Điền giá trị NaN bằng giá trung bình của cột
+df_selected = df_selected.fillna(df_selected.mean())
+
 # Đặt 'DATE' làm chỉ số của DataFrame
 df_selected.set_index('DATE', inplace=True)
 
@@ -34,6 +39,35 @@ df_scaled = scaler.fit_transform(df_selected)
 # Chia thành tập huấn luyện và tập kiểm tra (80-20)
 train_data, test_data = train_test_split(
     df_scaled, test_size=0.2, shuffle=False)
+
+
+# Biểu đồ phân tích xu hướng cho cột 'USD_W'
+plt.figure(figsize=(12, 6))
+plt.plot(df_selected['USD_W'], label='USD_W', color='blue')
+plt.title('Trend Analysis for USD_W')
+plt.xlabel('Date')
+plt.ylabel('Scaled Value')
+plt.legend()
+plt.show()
+
+# Biểu đồ phân tích xu hướng cho cột 'DT_W'
+plt.figure(figsize=(12, 6))
+plt.plot(df_selected['DT_W'], label='DT_W', color='green')
+plt.title('Trend Analysis for DT_W')
+plt.xlabel('Date')
+plt.ylabel('Scaled Value')
+plt.legend()
+plt.show()
+
+# Biểu đồ phân tích xu hướng cho cột 'V_W'
+plt.figure(figsize=(12, 6))
+plt.plot(df_selected['V_W'], label='V_W', color='red')
+plt.title('Trend Analysis for V_W')
+plt.xlabel('Date')
+plt.ylabel('Scaled Value')
+plt.legend()
+plt.show()
+
 
 # Chuẩn Bị Dữ Liệu cho LSTM, GRU, và RNN
 
@@ -100,9 +134,13 @@ rnn_model = KerasRegressor(build_fn=create_rnn_model,
 
 # Định nghĩa các giá trị thử nghiệm cho các siêu tham số
 param_dist = {
+    # 16, 32, 64, 128, 256
     'units': [16, 32, 64, 128, 256],
-    'activation': ['relu', 'sigmoid', 'tanh'],
+    # 'sigmoid', 'tanh', 'relu'
+    'activation': ['sigmoid', 'tanh', 'relu'],
+    # 0.1, 0.2, 0.25, 0.5
     'dropout_rate': [0.1, 0.2, 0.25, 0.5],
+    # 0.001, 0.005, 0.01
     'learning_rate': [0.001, 0.005, 0.01],
     # 'batch_size': [16, 32, 64, 128, 256]
 }
@@ -266,30 +304,60 @@ for i, column_name in enumerate(selected_columns[1:]):
 # plt.show()
 
 # Trực quan hóa kết quả dự báo của mô hình
-plt.figure(figsize=(14, 20))
+# plt.figure(figsize=(14, 20))
 
-# Duyệt qua từng cột dữ liệu
+# # Duyệt qua từng cột dữ liệu
+# for i, column_name in enumerate(selected_columns[1:]):
+#     # Vẽ đồ thị cho mô hình LSTM
+#     plt.subplot(6, 3, i + 1)
+#     plt.plot(df_selected.index[-len(y_test):], y_test[:, i], label='Actual')
+#     plt.plot(df_selected.index[-len(y_test):],
+#              y_pred_lstm[:, i], label='LSTM Prediction')
+#     plt.title(f'{column_name} - LSTM')
+#     plt.legend()
+
+#     # Vẽ đồ thị cho mô hình GRU
+#     plt.subplot(6, 3, len(selected_columns[1:]) + i + 1)
+#     plt.plot(df_selected.index[-len(y_test):], y_test[:, i], label='Actual')
+#     plt.plot(df_selected.index[-len(y_test):],
+#              y_pred_gru[:, i], label='GRU Prediction')
+#     plt.title(f'{column_name} - GRU')
+#     plt.legend()
+
+#     # Vẽ đồ thị cho mô hình RNN
+#     plt.subplot(6, 3, 2 * len(selected_columns[1:]) + i + 1)
+#     plt.plot(df_selected.index[-len(y_test):], y_test[:, i], label='Actual')
+#     plt.plot(df_selected.index[-len(y_test):],
+#              y_pred_rnn[:, i], label='RNN Prediction')
+#     plt.title(f'{column_name} - RNN')
+#     plt.legend()
+
+# plt.tight_layout()
+# plt.show()
+
+# Trực quan hóa kết quả cho mỗi cột dữ liệu từ cả 3 mô hình
 for i, column_name in enumerate(selected_columns[1:]):
-    # Vẽ đồ thị cho mô hình LSTM
-    plt.subplot(6, 3, i + 1)
-    plt.plot(df_selected.index[-len(y_test):], y_test[:, i], label='Actual')
-    plt.plot(df_selected.index[-len(y_test):], y_pred_lstm[:, i], label='LSTM Prediction')
-    plt.title(f'{column_name} - LSTM')
-    plt.legend()
+    plt.figure(figsize=(15, 8))
 
-    # Vẽ đồ thị cho mô hình GRU
-    plt.subplot(6, 3, len(selected_columns[1:]) + i + 1)
-    plt.plot(df_selected.index[-len(y_test):], y_test[:, i], label='Actual')
-    plt.plot(df_selected.index[-len(y_test):], y_pred_gru[:, i], label='GRU Prediction')
-    plt.title(f'{column_name} - GRU')
-    plt.legend()
+    # Vẽ dữ liệu thực tế
+    plt.plot(df_selected.index[-len(y_test):],
+             y_test[:, i], label='Actual', color='black')
 
-    # Vẽ đồ thị cho mô hình RNN
-    plt.subplot(6, 3, 2 * len(selected_columns[1:]) + i + 1)
-    plt.plot(df_selected.index[-len(y_test):], y_test[:, i], label='Actual')
-    plt.plot(df_selected.index[-len(y_test):], y_pred_rnn[:, i], label='RNN Prediction')
-    plt.title(f'{column_name} - RNN')
-    plt.legend()
+    # Vẽ dự báo từ mô hình LSTM
+    plt.plot(df_selected.index[-len(y_test):], y_pred_lstm[:, i],
+             label='LSTM Prediction', linestyle='dashed', color='blue')
 
-plt.tight_layout()
-plt.show()
+    # Vẽ dự báo từ mô hình GRU
+    plt.plot(df_selected.index[-len(y_test):], y_pred_gru[:, i],
+             label='GRU Prediction', linestyle='dashed', color='green')
+
+    # Vẽ dự báo từ mô hình RNN
+    plt.plot(df_selected.index[-len(y_test):], y_pred_rnn[:, i],
+             label='RNN Prediction', linestyle='dashed', color='red')
+
+    # Thiết lập các thuộc tính đồ thị
+    plt.title(f'Comparison of Predictions for {column_name}')
+    plt.xlabel('Date')
+    plt.ylabel('Scaled Value')
+    plt.legend()
+    plt.show()

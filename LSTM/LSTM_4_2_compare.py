@@ -54,7 +54,7 @@ X_test, y_test = prepare_data(test_data, time_steps)
 model_lstm = Sequential()
 model_lstm.add(LSTM(units=50, activation='relu',
                input_shape=(X_train.shape[1], X_train.shape[2])))
-model_lstm.add(Dense(units=3))  # 3 units cho 3 trường dữ liệu
+model_lstm.add(Dense(units=3))
 model_lstm.compile(optimizer='adam', loss='mse')
 
 # Huấn luyện mô hình LSTM
