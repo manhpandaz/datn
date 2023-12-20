@@ -12,11 +12,6 @@ import matplotlib.pyplot as plt
 # Đọc dữ liệu từ nguồn
 df = pd.read_excel('data/DulieuVang_dau_Tygia.xlsx')
 
-print("Một vài dữ liệu đầu tiên:")
-print(df.head())
-
-print(f"Tổng số lượng dữ liệu: {len(df)}")
-
 # Chọn các trường dữ liệu cần thiết
 selected_columns = ['DATE', 'USD_W', 'DT_W', 'V_W']
 df_selected = df[selected_columns]
@@ -24,15 +19,25 @@ df_selected = df[selected_columns]
 # Chuyển đổi cột 'DATE' thành kiểu dữ liệu datetime
 df_selected['DATE'] = pd.to_datetime(df_selected['DATE'])
 
-# Xóa dữ liệu trùng lặp
-df_selected = df_selected[~df_selected.duplicated()]
-# Xử lý giá trị NaN: Điền giá trị NaN bằng giá trung bình của cột
-df_selected = df_selected.fillna(df_selected.mean())
-
 # Đặt 'DATE' làm chỉ số của DataFrame
 df_selected.set_index('DATE', inplace=True)
 
-# Chuẩn hóa dữ liệu sử dụng Min-Max Scaler
+
+print("Một vài dữ liệu đầu tiên:")
+print(df_selected.head())
+print(f"Tổng số lượng dữ gốc: {len(df_selected)}")
+
+
+# Chuẩn hóa
+# Xử lý giá trị NaN
+df_selected = df_selected.fillna(method="ffill", inplace=False)
+# Xóa dữ liệu trùng lặp
+df_selected = df_selected.drop_duplicates()
+
+print(df_selected.head())
+print(f"Tổng số lượng dữ liệu sau khi xử lý: {len(df_selected)}")
+
+# chuẩn hóa Min-Max Scaler
 scaler = MinMaxScaler()
 df_scaled = scaler.fit_transform(df_selected)
 
@@ -41,37 +46,35 @@ train_data, test_data = train_test_split(
     df_scaled, test_size=0.2, shuffle=False)
 
 
-# Biểu đồ phân tích xu hướng cho cột 'USD_W'
+# Biểu đồ phân tích xu hướng dữ liệu gốc cho cột 'USD_W'
 plt.figure(figsize=(12, 6))
 plt.plot(df_selected['USD_W'], label='USD_W', color='blue')
 plt.title('Trend Analysis for USD_W')
-plt.xlabel('Date')
-plt.ylabel('Scaled Value')
+plt.xlabel('DATE')
+plt.ylabel('Value')
 plt.legend()
 plt.show()
 
-# Biểu đồ phân tích xu hướng cho cột 'DT_W'
+#  'DT_W'
 plt.figure(figsize=(12, 6))
 plt.plot(df_selected['DT_W'], label='DT_W', color='green')
 plt.title('Trend Analysis for DT_W')
-plt.xlabel('Date')
-plt.ylabel('Scaled Value')
+plt.xlabel('DATE')
+plt.ylabel('Value')
 plt.legend()
 plt.show()
 
-# Biểu đồ phân tích xu hướng cho cột 'V_W'
+#  'V_W'
 plt.figure(figsize=(12, 6))
 plt.plot(df_selected['V_W'], label='V_W', color='red')
 plt.title('Trend Analysis for V_W')
-plt.xlabel('Date')
-plt.ylabel('Scaled Value')
+plt.xlabel('DATE')
+plt.ylabel('Value')
 plt.legend()
 plt.show()
 
 
 # Chuẩn Bị Dữ Liệu cho LSTM, GRU, và RNN
-
-
 def prepare_data(data, time_steps):
     X, y = [], []
     for i in range(len(data) - time_steps):
@@ -84,7 +87,7 @@ time_steps = 10
 X_train, y_train = prepare_data(train_data, time_steps)
 X_test, y_test = prepare_data(test_data, time_steps)
 
-#  tạo mô hình cho LSTM với các tham số cần tối ưu
+#  tạo mô hình cho LSTM
 
 
 def create_lstm_model(units=50, activation='relu', dropout_rate=0.0, learning_rate=0.001):
@@ -97,7 +100,7 @@ def create_lstm_model(units=50, activation='relu', dropout_rate=0.0, learning_ra
     model.compile(optimizer=optimizer, loss='mse')
     return model
 
-#  tạo mô hình cho GRU với các tham số cần tối ưu
+#  tạo mô hình cho GRU
 
 
 def create_gru_model(units=50, activation='relu', dropout_rate=0.0, learning_rate=0.001):
@@ -110,7 +113,7 @@ def create_gru_model(units=50, activation='relu', dropout_rate=0.0, learning_rat
     model.compile(optimizer=optimizer, loss='mse')
     return model
 
-#  tạo mô hình cho RNN với các tham số cần tối ưu
+#  tạo mô hình cho RNN
 
 
 def create_rnn_model(units=50, activation='relu', dropout_rate=0.0, learning_rate=0.001):
