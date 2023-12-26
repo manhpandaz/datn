@@ -76,6 +76,10 @@ plt.show()
 
 # Chuẩn Bị Dữ Liệu cho LSTM, GRU, và RNN
 def prepare_data(data, time_steps):
+    if len(data) == 0:
+        raise ValueError("Dữ liệu đầu vào không được rỗng.")
+    if time_steps >= len(data):
+        raise ValueError("time_steps phải nhỏ hơn chiều dài của dữ liệu.")
     X, y = [], []
     for i in range(len(data) - time_steps):
         X.append(data[i:(i + time_steps)])
@@ -129,11 +133,11 @@ def create_rnn_model(units=50, activation='relu', dropout_rate=0.0, learning_rat
 
 # Wrap mô hình vào KerasRegressor để sử dụng với RandomizedSearchCV
 lstm_model = KerasRegressor(
-    build_fn=create_lstm_model, epochs=50, batch_size=32, verbose=0)
+    build_fn=create_lstm_model, epochs=50, batch_size=64, verbose=0)
 gru_model = KerasRegressor(build_fn=create_gru_model,
-                           epochs=50, batch_size=32, verbose=0)
+                           epochs=50, batch_size=64, verbose=0)
 rnn_model = KerasRegressor(build_fn=create_rnn_model,
-                           epochs=50, batch_size=32, verbose=0)
+                           epochs=50, batch_size=64, verbose=0)
 
 # Định nghĩa các giá trị thử nghiệm cho các siêu tham số
 param_dist = {
@@ -145,7 +149,7 @@ param_dist = {
     'dropout_rate': [0.1, 0.2, 0.25, 0.5],
     # 0.001, 0.005, 0.01
     'learning_rate': [0.001, 0.005, 0.01],
-    # 'batch_size': [16, 32, 64, 128, 256]
+
 }
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho LSTM
@@ -159,7 +163,7 @@ print("Best LSTM: %f using %s" % (random_search_lstm_result.best_score_,
 best_lstm_model = random_search_lstm.best_estimator_.model
 
 # Huấn luyện mô hình LSTM với siêu tham số tốt nhất
-best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32, verbose=0)
+best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=64, verbose=0)
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho GRU
 random_search_gru = RandomizedSearchCV(estimator=gru_model, param_distributions=param_dist,
@@ -172,7 +176,7 @@ print("Best GRU: %f using %s" % (random_search_gru_result.best_score_,
 best_gru_model = random_search_gru.best_estimator_.model
 
 # Huấn luyện mô hình GRU với siêu tham số tốt nhất
-best_gru_model.fit(X_train, y_train, epochs=1000, batch_size=32, verbose=0)
+best_gru_model.fit(X_train, y_train, epochs=1000, batch_size=64, verbose=0)
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho RNN
 random_search_rnn = RandomizedSearchCV(estimator=rnn_model, param_distributions=param_dist,
@@ -185,7 +189,7 @@ print("Best RNN: %f using %s" % (random_search_rnn_result.best_score_,
 best_rnn_model = random_search_rnn.best_estimator_.model
 
 # Huấn luyện mô hình RNN với siêu tham số tốt nhất
-best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=32, verbose=0)
+best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=64, verbose=0)
 
 # Dự báo trên tập kiểm tra cho LSTM, GRU, và RNN
 y_pred_lstm = best_lstm_model.predict(X_test)
@@ -209,6 +213,34 @@ for i, column_name in enumerate(selected_columns[1:]):
 print("\nMSE (RNN) for each column:")
 for i, column_name in enumerate(selected_columns[1:]):
     print(f"{column_name}: {mse_rnn[i]}")
+
+
+# Trực quan hóa kết quả
+for i, column_name in enumerate(selected_columns[1:]):
+    plt.figure(figsize=(15, 8))
+
+    # Vẽ dữ liệu thực tế
+    plt.plot(df_selected.index[-len(y_test):],
+             y_test[:, i], label='Actual', color='black')
+
+    # Vẽ dự đoán LSTM
+    plt.plot(df_selected.index[-len(y_test):], y_pred_lstm[:, i],
+             label='LSTM Prediction', linestyle='dashed', color='blue')
+
+    # Vẽ GRU
+    plt.plot(df_selected.index[-len(y_test):], y_pred_gru[:, i],
+             label='GRU Prediction', linestyle='dashed', color='green')
+
+    # Vẽ RNN
+    plt.plot(df_selected.index[-len(y_test):], y_pred_rnn[:, i],
+             label='RNN Prediction', linestyle='dashed', color='red')
+
+    # Thiết lập các thuộc tính đồ thị
+    plt.title(f'Comparison of Predictions for {column_name}')
+    plt.xlabel('Date')
+    plt.ylabel('Scaled Value')
+    plt.legend()
+    plt.show()
 
 #  # Trực quan hóa kết quả dự báo của mô hình
 # plt.figure(figsize=(14, 8))
@@ -337,30 +369,3 @@ for i, column_name in enumerate(selected_columns[1:]):
 
 # plt.tight_layout()
 # plt.show()
-
-# Trực quan hóa kết quả cho mỗi cột dữ liệu từ cả 3 mô hình
-for i, column_name in enumerate(selected_columns[1:]):
-    plt.figure(figsize=(15, 8))
-
-    # Vẽ dữ liệu thực tế
-    plt.plot(df_selected.index[-len(y_test):],
-             y_test[:, i], label='Actual', color='black')
-
-    # Vẽ dự báo từ mô hình LSTM
-    plt.plot(df_selected.index[-len(y_test):], y_pred_lstm[:, i],
-             label='LSTM Prediction', linestyle='dashed', color='blue')
-
-    # Vẽ dự báo từ mô hình GRU
-    plt.plot(df_selected.index[-len(y_test):], y_pred_gru[:, i],
-             label='GRU Prediction', linestyle='dashed', color='green')
-
-    # Vẽ dự báo từ mô hình RNN
-    plt.plot(df_selected.index[-len(y_test):], y_pred_rnn[:, i],
-             label='RNN Prediction', linestyle='dashed', color='red')
-
-    # Thiết lập các thuộc tính đồ thị
-    plt.title(f'Comparison of Predictions for {column_name}')
-    plt.xlabel('Date')
-    plt.ylabel('Scaled Value')
-    plt.legend()
-    plt.show()

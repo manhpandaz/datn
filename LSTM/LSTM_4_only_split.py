@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+from keras.models import Sequential
+from keras.layers import LSTM, Dense
 import matplotlib.pyplot as plt
 
 # Đọc dữ liệu từ nguồn
@@ -20,30 +21,37 @@ df_selected['DATE'] = pd.to_datetime(df_selected['DATE'])
 df_selected.set_index('DATE', inplace=True)
 
 # Trực quan hóa dữ liệu gốc
-plt.figure(figsize=(12, 6))
+# plt.figure(figsize=(12, 6))
 
-plt.plot(df_selected.index, df_selected['USD_W'], label='USD_W', marker='o')
-plt.plot(df_selected.index, df_selected['DT_W'], label='DT_W', marker='o')
-plt.plot(df_selected.index, df_selected['V_W'], label='V_W', marker='o')
+# plt.plot(df_selected.index, df_selected['USD_W'], label='USD_W', marker='o')
+# plt.plot(df_selected.index, df_selected['DT_W'], label='DT_W', marker='o')
+# plt.plot(df_selected.index, df_selected['V_W'], label='V_W', marker='o')
 
-plt.title('Original Data - USD_W, DT_W, V_W')
-plt.xlabel('Date')
-plt.ylabel('Value')
-plt.legend()
-plt.show()
+# plt.title('Original Data - USD_W, DT_W, V_W')
+# plt.xlabel('Date')
+# plt.ylabel('Value')
+# plt.legend()
+# plt.show()
 
 # Chuẩn hóa dữ liệu sử dụng Min-Max Scaler
 scaler = MinMaxScaler()
 df_scaled = scaler.fit_transform(df_selected)
 
 # Chia thành tập huấn luyện và tập kiểm tra (tỷ lệ 80-20)
-train_size = int(len(df_scaled) * 0.8)
-train_data, test_data = df_scaled[:train_size], df_scaled[train_size:]
+# train_size = int(len(df_scaled) * 0.8)
+# train_data, test_data = df_scaled[:train_size], df_scaled[train_size:]
+
+train_data, test_data = train_test_split(
+    df_scaled, test_size=0.2, shuffle=False)
 
 # Chuẩn Bị Dữ Liệu cho LSTM
 
 
 def prepare_data(data, time_steps):
+    if len(data) == 0:
+        raise ValueError("Dữ liệu đầu vào không được rỗng.")
+    if time_steps >= len(data):
+        raise ValueError("time_steps phải nhỏ hơn chiều dài của dữ liệu.")
     X, y = [], []
     for i in range(len(data) - time_steps):
         X.append(data[i:(i + time_steps)])
@@ -63,7 +71,7 @@ model.add(Dense(units=3))  # 3 units cho 3 trường dữ liệu
 model.compile(optimizer='adam', loss='mse')
 
 # Huấn luyện mô hình
-model.fit(X_train, y_train, epochs=50, batch_size=32,
+model.fit(X_train, y_train, epochs=1000, batch_size=32,
           validation_data=(X_test, y_test), shuffle=False)
 
 # Đánh giá mô hình trên tập kiểm tra
@@ -82,33 +90,37 @@ for i, column in enumerate(selected_columns[1:]):
 y_test_inverse = scaler.inverse_transform(y_test)
 y_pred_inverse = scaler.inverse_transform(y_pred)
 
-# Tạo mảng các giá trị thời gian
-time_steps_test = df_selected.index[train_size + time_steps:]
 
 # Trực quan hóa kết quả cho cột USD_W
 plt.figure(figsize=(12, 6))
-plt.plot(time_steps_test, y_test_inverse[:, 0], label='Actual', marker='o')
-plt.plot(time_steps_test, y_pred_inverse[:, 0], label='Predicted', marker='o')
+plt.plot(df_selected.index[-len(y_test):],
+         y_test_inverse[:, 0], label='Actual', marker='o')
+plt.plot(df_selected.index[-len(y_test):],
+         y_pred_inverse[:, 0], label='Predicted', marker='o')
 plt.title('USD_W - Actual vs. Predicted')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
 plt.show()
 
-# Trực quan hóa kết quả cho cột DT_W
+#  DT_W
 plt.figure(figsize=(12, 6))
-plt.plot(time_steps_test, y_test_inverse[:, 1], label='Actual', marker='o')
-plt.plot(time_steps_test, y_pred_inverse[:, 1], label='Predicted', marker='o')
+plt.plot(df_selected.index[-len(y_test):],
+         y_test_inverse[:, 1], label='Actual', marker='o')
+plt.plot(df_selected.index[-len(y_test):],
+         y_pred_inverse[:, 1], label='Predicted', marker='o')
 plt.title('DT_W - Actual vs. Predicted')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
 plt.show()
 
-# Trực quan hóa kết quả cho cột V_W
+#  V_W
 plt.figure(figsize=(12, 6))
-plt.plot(time_steps_test, y_test_inverse[:, 2], label='Actual', marker='o')
-plt.plot(time_steps_test, y_pred_inverse[:, 2], label='Predicted', marker='o')
+plt.plot(df_selected.index[-len(y_test):],
+         y_test_inverse[:, 2], label='Actual', marker='o')
+plt.plot(df_selected.index[-len(y_test):],
+         y_pred_inverse[:, 2], label='Predicted', marker='o')
 plt.title('V_W - Actual vs. Predicted')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
@@ -116,8 +128,8 @@ plt.legend()
 plt.show()
 
 # plt.subplot(1, 3, 1)  # Lưới 1x3, ô ở vị trí 1
-# plt.plot(time_steps_test, y_test_inverse[:, 0], label='Actual', marker='o')
-# plt.plot(time_steps_test, y_pred_inverse[:, 0], label='Predicted', marker='o')
+# plt.plot(df_selected.index[-len(y_test):], y_test_inverse[:, 0], label='Actual', marker='o')
+# plt.plot(df_selected.index[-len(y_test):], y_pred_inverse[:, 0], label='Predicted', marker='o')
 # plt.title('USD_W - Actual vs. Predicted')
 # plt.xlabel('Time Steps')
 # plt.ylabel('Value')
@@ -125,8 +137,8 @@ plt.show()
 
 # # Trực quan hóa kết quả cho cột DT_W
 # plt.subplot(1, 3, 2)  # Lưới 1x3, ô ở vị trí 2
-# plt.plot(time_steps_test, y_test_inverse[:, 1], label='Actual', marker='o')
-# plt.plot(time_steps_test, y_pred_inverse[:, 1], label='Predicted', marker='o')
+# plt.plot(df_selected.index[-len(y_test):], y_test_inverse[:, 1], label='Actual', marker='o')
+# plt.plot(df_selected.index[-len(y_test):], y_pred_inverse[:, 1], label='Predicted', marker='o')
 # plt.title('DT_W - Actual vs. Predicted')
 # plt.xlabel('Time Steps')
 # plt.ylabel('Value')
@@ -134,8 +146,8 @@ plt.show()
 
 # # Trực quan hóa kết quả cho cột V_W
 # plt.subplot(1, 3, 3)  # Lưới 1x3, ô ở vị trí 3
-# plt.plot(time_steps_test, y_test_inverse[:, 2], label='Actual', marker='o')
-# plt.plot(time_steps_test, y_pred_inverse[:, 2], label='Predicted', marker='o')
+# plt.plot(df_selected.index[-len(y_test):], y_test_inverse[:, 2], label='Actual', marker='o')
+# plt.plot(df_selected.index[-len(y_test):], y_pred_inverse[:, 2], label='Predicted', marker='o')
 # plt.title('V_W - Actual vs. Predicted')
 # plt.xlabel('Time Steps')
 # plt.ylabel('Value')
