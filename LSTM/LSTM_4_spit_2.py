@@ -63,10 +63,15 @@ time_steps = 10  # Số lượng bước thời gian quan sát trước đó
 X_train, y_train = prepare_data(train_data, time_steps)
 X_test, y_test = prepare_data(test_data, time_steps)
 
+
+lstm_forget = LSTM(units=50, activation='sigmoid', recurrent_activation='sigmoid', return_sequences=True)
+lstm_input = LSTM(units=50, activation='tanh', recurrent_activation='sigmoid', return_sequences=True)
+lstm_output = LSTM(units=50, activation='tanh', recurrent_activation='sigmoid')
 # Xây dựng mô hình LSTM
 model = Sequential()
-model.add(LSTM(units=50, activation='tanh', input_shape=(
-    X_train.shape[1], X_train.shape[2])))
+model.add(lstm_forget)
+model.add(lstm_input)
+model.add(lstm_output)
 model.add(Dropout(0.2))
 model.add(Dense(units=3))
 model.compile(optimizer='adam', loss='mse')
