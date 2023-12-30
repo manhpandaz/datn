@@ -202,39 +202,75 @@ mse_gru = mean_squared_error(y_test, y_pred_gru, multioutput='raw_values')
 mse_rnn = mean_squared_error(y_test, y_pred_rnn, multioutput='raw_values')
 
 # In kết quả MSE cho từng cột dữ liệu
-# print("\nMSE (LSTM) for each column:")
-# for i, column_name in enumerate(selected_columns[1:]):
-#     print(f"{column_name}: {mse_lstm[i]}")
+print("\nMSE (LSTM) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_lstm[i]}")
 
-# print("\nMSE (GRU) for each column:")
-# for i, column_name in enumerate(selected_columns[1:]):
-#     print(f"{column_name}: {mse_gru[i]}")
+print("\nMSE (GRU) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_gru[i]}")
 
-# print("\nMSE (RNN) for each column:")
-# for i, column_name in enumerate(selected_columns[1:]):
-#     print(f"{column_name}: {mse_rnn[i]}")
+print("\nMSE (RNN) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_rnn[i]}")
 
 
-def plot_predictions(actual, predicted, column_name, model_name):
-    plt.figure(figsize=(12, 6))
-    plt.plot(actual, label=f'{column_name} - Actual', color='blue')
-    plt.plot(predicted, label=f'{column_name} - {model_name} Prediction',
-             color='red', linestyle='dashed')
-    plt.title(f'{model_name} Prediction vs Actual for {column_name}')
-    plt.xlabel('Time Step')
-    plt.ylabel('Scaled Value')
-    plt.legend()
-    plt.show()
+# Dự báo và thực tế cho 'USD_W'
+plt.figure(figsize=(12, 6))
+plt.plot(y_test[:, 0], label='Actual', color='blue')
+plt.plot(y_pred_lstm[:, 0], label='LSTM', linestyle='dashed', color='orange')
+plt.plot(y_pred_gru[:, 0], label='GRU', linestyle='dashed', color='green')
+plt.plot(y_pred_rnn[:, 0], label='RNN', linestyle='dashed', color='red')
+plt.title('USD_W - Actual vs Predicted')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+# Dự báo và thực tế cho 'DT_W'
+plt.figure(figsize=(12, 6))
+plt.plot(y_test[:, 1], label='Actual', color='blue')
+plt.plot(y_pred_lstm[:, 1], label='LSTM', linestyle='dashed', color='orange')
+plt.plot(y_pred_gru[:, 1], label='GRU', linestyle='dashed', color='green')
+plt.plot(y_pred_rnn[:, 1], label='RNN', linestyle='dashed', color='red')
+plt.title('DT_W - Actual vs Predicted')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+# Dự báo và thực tế cho 'V_W'
+plt.figure(figsize=(12, 6))
+plt.plot(y_test[:, 2], label='Actual', color='blue')
+plt.plot(y_pred_lstm[:, 2], label='LSTM', linestyle='dashed', color='orange')
+plt.plot(y_pred_gru[:, 2], label='GRU', linestyle='dashed', color='green')
+plt.plot(y_pred_rnn[:, 2], label='RNN', linestyle='dashed', color='red')
+plt.title('V_W - Actual vs Predicted')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+# def plot_predictions(actual, predicted, column_name, model_name):
+# plt.figure(figsize=(12, 6))
+# plt.plot(actual, label=f'{column_name} - Actual', color='blue')
+# plt.plot(predicted, label=f'{column_name} - {model_name} Prediction',
+#          color='red', linestyle='dashed')
+# plt.title(f'{model_name} Prediction vs Actual for {column_name}')
+# plt.xlabel('Time Step')
+# plt.ylabel('Scaled Value')
+# plt.legend()
+# plt.show()
 
 
 # Trực quan hóa kết quả dự báo cho LSTM
-for i, column_name in enumerate(selected_columns[1:]):
-    plot_predictions(y_test[:, i], y_pred_lstm[:, i], column_name, 'LSTM')
+# for i, column_name in enumerate(selected_columns[1:]):
+#     plot_predictions(y_test[:, i], y_pred_lstm[:, i], column_name, 'LSTM')
 
-# Trực quan hóa kết quả dự báo cho GRU
-for i, column_name in enumerate(selected_columns[1:]):
-    plot_predictions(y_test[:, i], y_pred_gru[:, i], column_name, 'GRU')
+# # Trực quan hóa kết quả dự báo cho GRU
+# for i, column_name in enumerate(selected_columns[1:]):
+#     plot_predictions(y_test[:, i], y_pred_gru[:, i], column_name, 'GRU')
 
-# Trực quan hóa kết quả dự báo cho RNN
-for i, column_name in enumerate(selected_columns[1:]):
-    plot_predictions(y_test[:, i], y_pred_rnn[:, i], column_name, 'RNN')
+# # Trực quan hóa kết quả dự báo cho RNN
+# for i, column_name in enumerate(selected_columns[1:]):
+#     plot_predictions(y_test[:, i], y_pred_rnn[:, i], column_name, 'RNN')
