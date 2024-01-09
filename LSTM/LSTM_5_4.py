@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from keras.callbacks import ModelCheckpoint, History
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
 from keras.layers import LSTM, GRU, SimpleRNN, Dense, Dropout
@@ -135,7 +134,7 @@ def create_rnn_model(units=50, activation='relu', dropout_rate=0.0, learning_rat
     return model
 
 
-# Wrap mô hình vào KerasRegressor để sử dụng với RandomizedSearchCV
+# Wrap mô hình vào KerasRegressor để sử dụng với GridSearchCV
 lstm_model = KerasRegressor(
     build_fn=create_lstm_model, epochs=300, batch_size=32, verbose=0)
 gru_model = KerasRegressor(build_fn=create_gru_model,
@@ -155,8 +154,8 @@ param_dist = {
     'learning_rate': [0.01, 0.001, 0.005],
 }
 
-# Tìm kiếm siêu tham số bằng RandomizedSearchCV cho LSTM
-random_search_lstm = RandomizedSearchCV(estimator=lstm_model, param_distributions=param_dist,
+# Tìm kiếm siêu tham số bằng GridSearchCV cho LSTM
+random_search_lstm = GridSearchCV(estimator=lstm_model, param_distributions=param_dist,
                                         scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
 random_search_lstm_result = random_search_lstm.fit(X_train, y_train)
 
@@ -169,8 +168,8 @@ best_lstm_model = random_search_lstm.best_estimator_.model
 best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32,
                     validation_data=(X_test, y_test), shuffle=False, verbose=0)
 
-# Tìm kiếm siêu tham số bằng RandomizedSearchCV cho GRU
-random_search_gru = RandomizedSearchCV(estimator=gru_model, param_distributions=param_dist,
+# Tìm kiếm siêu tham số bằng GridSearchCV cho GRU
+random_search_gru = GridSearchCV(estimator=gru_model, param_distributions=param_dist,
                                        scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
 random_search_gru_result = random_search_gru.fit(X_train, y_train)
 
@@ -183,8 +182,8 @@ best_gru_model = random_search_gru.best_estimator_.model
 best_gru_model.fit(X_train, y_train, epochs=1000,
                    batch_size=32, verbose=0)
 
-# Tìm kiếm siêu tham số bằng RandomizedSearchCV cho RNN
-random_search_rnn = RandomizedSearchCV(estimator=rnn_model, param_distributions=param_dist,
+# Tìm kiếm siêu tham số bằng GridSearchCV cho RNN
+random_search_rnn = GridSearchCV(estimator=rnn_model, param_distributions=param_dist,
                                        scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
 random_search_rnn_result = random_search_rnn.fit(X_train, y_train)
 

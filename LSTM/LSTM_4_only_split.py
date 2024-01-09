@@ -73,7 +73,6 @@ history = History()
 model = Sequential()
 model.add(LSTM(units=50, activation='tanh', input_shape=(
     X_train.shape[1], X_train.shape[2])))
-model.add(Dropout(0.2))
 model.add(Dense(units=3))
 model.compile(optimizer='adam', loss='mse')
 
@@ -81,6 +80,8 @@ model.compile(optimizer='adam', loss='mse')
 # Huấn luyện mô hình
 model.fit(X_train, y_train, epochs=1000, batch_size=32,
           validation_data=(X_test, y_test), shuffle=False, callbacks=[history])
+
+
 loss_values = history.history['loss']
 val_loss_values = history.history['val_loss']
 # print(loss_values)
@@ -115,7 +116,6 @@ for i, column in enumerate(selected_columns[1:]):
 # Đảo ngược chuẩn hóa để có giá trị gốc
 y_test_inverse = scaler.inverse_transform(y_test)
 y_pred_inverse = scaler.inverse_transform(y_pred)
-
 
 # Trực quan hóa kết quả cho cột USD_W
 plt.figure(figsize=(12, 6))
