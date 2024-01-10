@@ -153,6 +153,31 @@ best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=32,
                    validation_data=(X_test, y_test), shuffle=False, verbose=0,
                    callbacks=[checkpoint_rnn, history_rnn])
 
+
+# Dự báo trên tập kiểm tra cho LSTM, GRU, và RNN
+y_pred_lstm = best_lstm_model.predict(X_test)
+y_pred_gru = best_gru_model.predict(X_test)
+y_pred_rnn = best_rnn_model.predict(X_test)
+
+# Đánh giá mô hình và tính MSE cho từng cột dữ liệu
+mse_lstm = mean_squared_error(y_test, y_pred_lstm, multioutput='raw_values')
+mse_gru = mean_squared_error(y_test, y_pred_gru, multioutput='raw_values')
+mse_rnn = mean_squared_error(y_test, y_pred_rnn, multioutput='raw_values')
+
+
+print("\nMSE (LSTM) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_lstm[i]}")
+
+print("\nMSE (GRU) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_gru[i]}")
+
+print("\nMSE (RNN) for each column:")
+for i, column_name in enumerate(selected_columns[1:]):
+    print(f"{column_name}: {mse_rnn[i]}")
+
+
 # Vẽ biểu đồ loss trên tập kiểm thử cho LSTM
 plt.figure(figsize=(15, 8))
 plt.plot(history_lstm.history['val_loss'],
@@ -181,4 +206,89 @@ plt.title('RNN Validation Loss Over Epochs')
 plt.xlabel('Epochs')
 plt.ylabel('Validation Loss')
 plt.legend()
+plt.show()
+
+# Vẽ đồ thị cho mô hình LSTM
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 0], label='Actual')
+plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction', marker="o")
+plt.title('USD_W - LSTM')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 1], label='Actual')
+plt.plot(y_pred_lstm[:, 1], label='LSTM Prediction')
+plt.title('USD_W - LSTM')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 2], label='Actual')
+plt.plot(y_pred_lstm[:, 2], label='LSTM Prediction')
+plt.title('USD_W - LSTM')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+
+plt.tight_layout()
+plt.show()
+
+# Vẽ đồ thị cho mô hình GRU
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 0], label='Actual')
+plt.plot(y_pred_gru[:, 0], label='GRU Prediction')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.title('USD_W - GRU')
+
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 1], label='Actual')
+plt.plot(y_pred_gru[:, 1], label='GRU Prediction')
+plt.title('USD_W - GRU')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 2], label='Actual')
+plt.plot(y_pred_gru[:, 2], label='GRU Prediction')
+plt.title('USD_W - GRU')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+
+plt.tight_layout()
+plt.show()
+
+# Vẽ đồ thị cho mô hình RNN
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 0], label='Actual')
+plt.plot(y_pred_rnn[:, 0], label='RNN Prediction')
+plt.title('USD_W - RNN')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 1], label='Actual')
+plt.plot(y_pred_rnn[:, 1], label='RNN Prediction')
+plt.title('USD_W - RNN')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+
+plt.figure(figsize=(15, 8))
+plt.plot(y_test[:, 2], label='Actual')
+plt.plot(y_pred_rnn[:, 2], label='RNN Prediction')
+plt.title('USD_W - RNN')
+plt.xlabel('Time Steps')
+plt.ylabel('Value')
+plt.legend()
+plt.tight_layout()
 plt.show()

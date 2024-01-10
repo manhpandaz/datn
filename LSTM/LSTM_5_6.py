@@ -165,9 +165,11 @@ print("Best LSTM: %f using %s" % (random_search_lstm_result.best_score_,
       random_search_lstm_result.best_params_))
 best_lstm_model = random_search_lstm.best_estimator_.model
 
+history_lstm = History()
+
 # Huấn luyện mô hình LSTM với siêu tham số tốt nhất
 best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32,
-                    validation_data=(X_test, y_test), shuffle=False, verbose=0)
+                    validation_data=(X_test, y_test), shuffle=False, callbacks=[history_lstm], verbose=0)
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho GRU
 random_search_gru = RandomizedSearchCV(estimator=gru_model, param_distributions=param_dist,
@@ -178,11 +180,10 @@ random_search_gru_result = random_search_gru.fit(X_train, y_train)
 print("Best GRU: %f using %s" % (random_search_gru_result.best_score_,
       random_search_gru_result.best_params_))
 best_gru_model = random_search_gru.best_estimator_.model
-
+history_gru = History()
 # Huấn luyện mô hình GRU với siêu tham số tốt nhất
 best_gru_model.fit(X_train, y_train, epochs=1000,
-                   batch_size=32, verbose=0)
-
+                   batch_size=32, callbacks=[history_gru], verbose=0)
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho RNN
 random_search_rnn = RandomizedSearchCV(estimator=rnn_model, param_distributions=param_dist,
                                        scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
@@ -192,9 +193,9 @@ random_search_rnn_result = random_search_rnn.fit(X_train, y_train)
 print("Best RNN: %f using %s" % (random_search_rnn_result.best_score_,
       random_search_rnn_result.best_params_))
 best_rnn_model = random_search_rnn.best_estimator_.model
-
+history_rnn = History()
 # Huấn luyện mô hình RNN với siêu tham số tốt nhất
-best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=32,
+best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=32,callbacks = [history_rnn],
                    verbose=0)
 
 # Dự báo trên tập kiểm tra cho LSTM, GRU, và RNN
