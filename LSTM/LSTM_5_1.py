@@ -158,16 +158,17 @@ param_dist = {
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho LSTM
 random_search_lstm = RandomizedSearchCV(estimator=lstm_model, param_distributions=param_dist,
                                         scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
+
 random_search_lstm_result = random_search_lstm.fit(X_train, y_train)
 
 # In kết quả tìm kiếm siêu tham số cho LSTM
 print("Best LSTM: %f using %s" % (random_search_lstm_result.best_score_,
       random_search_lstm_result.best_params_))
 best_lstm_model = random_search_lstm.best_estimator_.model
-
+history_lstm = History()
 # Huấn luyện mô hình LSTM với siêu tham số tốt nhất
 best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32,
-                    validation_data=(X_test, y_test), shuffle=False, verbose=0)
+                    validation_data=(X_test, y_test), shuffle=False, verbose=0, callbacks=[history_lstm])
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho GRU
 random_search_gru = RandomizedSearchCV(estimator=gru_model, param_distributions=param_dist,
@@ -179,9 +180,11 @@ print("Best GRU: %f using %s" % (random_search_gru_result.best_score_,
       random_search_gru_result.best_params_))
 best_gru_model = random_search_gru.best_estimator_.model
 
+history_gru = History()
+
 # Huấn luyện mô hình GRU với siêu tham số tốt nhất
 best_gru_model.fit(X_train, y_train, epochs=1000,
-                   batch_size=32, verbose=0)
+                   batch_size=32, verbose=0, callbacks=[history_gru])
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho RNN
 random_search_rnn = RandomizedSearchCV(estimator=rnn_model, param_distributions=param_dist,
@@ -193,9 +196,25 @@ print("Best RNN: %f using %s" % (random_search_rnn_result.best_score_,
       random_search_rnn_result.best_params_))
 best_rnn_model = random_search_rnn.best_estimator_.model
 
+history_rnn = History()
+
 # Huấn luyện mô hình RNN với siêu tham số tốt nhất
 best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=32,
-                   verbose=0)
+                   verbose=0, callbacks=[history_rnn])
+
+training_loss_lstm = history_lstm['loss']
+validation_loss_lstm = history_lstm['val_loss']
+
+training_loss_gru = history_lstm['loss']
+validation_loss_gru = history_lstm['val_loss']
+
+training_loss_rnn = history_lstm['loss']
+validation_loss_rnn = history_lstm['val_loss']
+
+print("validation loss:", validation_loss_lstm)
+print("validation loss:", validation_loss_gru)
+print("validation loss:", validation_loss_rnn)
+
 
 # Dự báo trên tập kiểm tra cho LSTM, GRU, và RNN
 y_pred_lstm = best_lstm_model.predict(X_test)

@@ -117,11 +117,11 @@ lstm_model = KerasRegressor(
 # Định nghĩa các giá trị thử nghiệm cho các siêu tham số
 param_dist = {
     # 16, 32, 64, 128, 256
-    'units': [64],
+    'units': [32],
     # 'sigmoid', 'tanh', 'relu'
-    'activation': ['tanh'],
+    'activation': ['relu'],
     # 0.1, 0.2, 0.25, 0.5
-    'dropout_rate': [0.2],
+    'dropout_rate': [0.1],
     # 0.001, 0.005, 0.01
     'learning_rate': [0.01],
 }
