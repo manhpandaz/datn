@@ -10,6 +10,7 @@ from keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
+
 # Đọc dữ liệu từ nguồn
 df = pd.read_excel('data/DulieuVang_dau_Tygia.xlsx')
 
@@ -29,11 +30,24 @@ print(df_selected.head())
 print(f"Tổng số lượng dữ gốc: {len(df_selected)}")
 
 
-# Chuẩn hóa
-# Xử lý giá trị NaN
-df_selected = df_selected.fillna(method="ffill", inplace=False)
-# Xóa dữ liệu trùng lặp
-df_selected = df_selected.drop_duplicates()
+contains_nan = df_selected.isnull().values.any()
+
+if contains_nan:
+    print("Dữ liệu chứa giá trị NaN. Cần xử lý trước khi sử dụng.")
+    # Xử lý giá trị NaN, ví dụ: điền giá trị trung bình của cột
+    df_selected = df_selected.fillna(method="ffill", inplace=False)
+else:
+    print("Dữ liệu không chứa giá trị NaN. Có thể tiếp tục.")
+
+# Kiểm tra và xử lý dữ liệu trùng lặp
+duplicated_rows = df_selected.duplicated()
+
+if duplicated_rows.any():
+    print("Dữ liệu chứa dòng trùng lặp. Cần xử lý trước khi sử dụng.")
+    # Xử lý dữ liệu trùng lặp
+    df_selected = df_selected.drop_duplicates()
+else:
+    print("Dữ liệu không chứa dòng trùng lặp. Có thể tiếp tục.")
 
 print(df_selected.head())
 print(f"Tổng số lượng dữ liệu sau khi xử lý: {len(df_selected)}")
@@ -78,7 +92,7 @@ train_data, test_data = train_test_split(
 # plt.show()
 
 
-# Chuẩn Bị Dữ Liệu cho LSTM, GRU, và RNN
+# Chuẩn Bị Dữ Liệu cho LSTM
 def prepare_data(data, time_steps):
     if len(data) == 0:
         raise ValueError("Dữ liệu đầu vào không được rỗng.")
@@ -91,17 +105,18 @@ def prepare_data(data, time_steps):
     return np.array(X), np.array(y)
 
 
-time_steps = 10
+time_steps = 20
 X_train, y_train = prepare_data(train_data, time_steps)
 X_test, y_test = prepare_data(test_data, time_steps)
 
 #  tạo mô hình cho LSTM
 
 
-def create_lstm_model(units=50, activation='relu', dropout_rate=0.0, learning_rate=0.001):
+def create_lstm_model(units=64, activation='relu', dropout_rate=0.2, learning_rate=0.01):
     model = Sequential()
     model.add(LSTM(units=units, activation=activation,
-              input_shape=(X_train.shape[1], X_train.shape[2])))
+              input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=True))
+    model.add(LSTM(units=units))
     model.add(Dropout(dropout_rate))
     model.add(Dense(units=3))
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
@@ -117,13 +132,13 @@ lstm_model = KerasRegressor(
 # Định nghĩa các giá trị thử nghiệm cho các siêu tham số
 param_dist = {
     # 16, 32, 64, 128, 256
-    'units': [32],
+    'units': [16, 32, 64, 128, 256],
     # 'sigmoid', 'tanh', 'relu'
-    'activation': ['relu'],
+    'activation': ['sigmoid', 'tanh', 'relu'],
     # 0.1, 0.2, 0.25, 0.5
-    'dropout_rate': [0.1],
+    'dropout_rate': [0.1, 0.2, 0.25, 0.5],
     # 0.001, 0.005, 0.01
-    'learning_rate': [0.01],
+    'learning_rate': [0.001, 0.005, 0.01],
 }
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho LSTM
@@ -140,7 +155,11 @@ history_lstm = History()
 
 # Huấn luyện mô hình LSTM với siêu tham số tốt nhất
 best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32,
-                    validation_data=(X_test, y_test), shuffle=False, callbacks=[history_lstm], verbose=0)
+                    validation_data=(X_test, y_test), shuffle=False, callbacks=[history_lstm], verbose=1)
+
+val_loss = history_lstm.history["val_loss"]
+
+# print("Loss validation:", val_loss)
 
 
 # Dự báo trên tập kiểm tra cho LSTM
@@ -156,25 +175,25 @@ for i, column_name in enumerate(selected_columns[1:]):
 
 
 # Vẽ đồ thị cho mô hình LSTM
-plt.figure(figsize=(15, 8))
-plt.plot(y_test[:, 0], label='Actual')
-plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction')
+plt.figure(figsize=(12, 6))
+plt.plot(y_test[:, 0], label='Actual', marker='o')
+plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction', marker='o')
 plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
 
-plt.figure(figsize=(15, 8))
-plt.plot(y_test[:, 1], label='Actual')
-plt.plot(y_pred_lstm[:, 1], label='LSTM Prediction')
+plt.figure(figsize=(12, 6))
+plt.plot(y_test[:, 1], label='Actual', marker='o')
+plt.plot(y_pred_lstm[:, 1], label='LSTM Prediction', marker='o')
 plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
 
-plt.figure(figsize=(15, 8))
-plt.plot(y_test[:, 2], label='Actual')
-plt.plot(y_pred_lstm[:, 2], label='LSTM Prediction')
+plt.figure(figsize=(12, 6))
+plt.plot(y_test[:, 2], label='Actual', marker='o')
+plt.plot(y_pred_lstm[:, 2], label='LSTM Prediction', marker='o')
 plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
@@ -182,6 +201,15 @@ plt.legend()
 
 
 plt.tight_layout()
+plt.show()
+
+
+# loss validation
+plt.figure(figsize=(12, 6))
+plt.plot(val_loss, label='Validation loss', marker='o')
+plt.xlabel('Epochs')
+plt.ylabel('Vlidation loss value')
+plt.legend()
 plt.show()
 
 

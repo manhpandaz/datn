@@ -71,8 +71,9 @@ X_test, y_test = prepare_data(test_data, time_steps)
 history = History()
 # Xây dựng mô hình LSTM
 model = Sequential()
-model.add(LSTM(units=50, activation='tanh', input_shape=(
+model.add(LSTM(units=50, activation='relu', input_shape=(
     X_train.shape[1], X_train.shape[2])))
+model.add(Dropout(0.2))
 model.add(Dense(units=3))
 model.compile(optimizer='adam', loss='mse')
 

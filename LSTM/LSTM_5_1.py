@@ -9,7 +9,7 @@ from keras.layers import LSTM, GRU, SimpleRNN, Dense, Dropout
 from keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
 import matplotlib.pyplot as plt
-
+import time
 # Đọc dữ liệu từ nguồn
 df = pd.read_excel('data/DulieuVang_dau_Tygia.xlsx')
 
@@ -150,7 +150,7 @@ param_dist = {
     # 'sigmoid', 'tanh', 'relu'
     'activation': ['sigmoid', 'tanh', 'relu'],
     # 0.1, 0.2, 0.25, 0.5
-    'dropout_rate': [0.0, 0.1, 0.2, 0.25, 0.4, 0.5, 0.6],
+    'dropout_rate': [0.1, 0.2, 0.25, 0.4, 0.5],
     # 0.001, 0.005, 0.01
     'learning_rate': [0.01, 0.001, 0.005],
 }
@@ -158,18 +158,18 @@ param_dist = {
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho LSTM
 random_search_lstm = RandomizedSearchCV(estimator=lstm_model, param_distributions=param_dist,
                                         scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
-
 random_search_lstm_result = random_search_lstm.fit(X_train, y_train)
 
 # In kết quả tìm kiếm siêu tham số cho LSTM
 print("Best LSTM: %f using %s" % (random_search_lstm_result.best_score_,
       random_search_lstm_result.best_params_))
 best_lstm_model = random_search_lstm.best_estimator_.model
-history_lstm = History()
-# Huấn luyện mô hình LSTM với siêu tham số tốt nhất
-best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32,
-                    validation_data=(X_test, y_test), shuffle=False, verbose=0, callbacks=[history_lstm])
 
+# Huấn luyện mô hình LSTM với siêu tham số tốt nhất
+start_time_lstm = time.time()
+best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32,
+                    validation_data=(X_test, y_test), shuffle=False, verbose=0)
+end_time_lstm = time.time()
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho GRU
 random_search_gru = RandomizedSearchCV(estimator=gru_model, param_distributions=param_dist,
                                        scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
@@ -180,12 +180,11 @@ print("Best GRU: %f using %s" % (random_search_gru_result.best_score_,
       random_search_gru_result.best_params_))
 best_gru_model = random_search_gru.best_estimator_.model
 
-history_gru = History()
-
 # Huấn luyện mô hình GRU với siêu tham số tốt nhất
+start_time_gru = time.time()
 best_gru_model.fit(X_train, y_train, epochs=1000,
-                   batch_size=32, verbose=0, callbacks=[history_gru])
-
+                   batch_size=32, verbose=0)
+end_time_gru = time.time()
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho RNN
 random_search_rnn = RandomizedSearchCV(estimator=rnn_model, param_distributions=param_dist,
                                        scoring='neg_mean_squared_error', n_iter=10, cv=3, verbose=1, random_state=42)
@@ -196,26 +195,11 @@ print("Best RNN: %f using %s" % (random_search_rnn_result.best_score_,
       random_search_rnn_result.best_params_))
 best_rnn_model = random_search_rnn.best_estimator_.model
 
-history_rnn = History()
-
 # Huấn luyện mô hình RNN với siêu tham số tốt nhất
+start_time_rnn = time.time()
 best_rnn_model.fit(X_train, y_train, epochs=1000, batch_size=32,
-                   verbose=0, callbacks=[history_rnn])
-
-training_loss_lstm = history_lstm['loss']
-validation_loss_lstm = history_lstm['val_loss']
-
-training_loss_gru = history_lstm['loss']
-validation_loss_gru = history_lstm['val_loss']
-
-training_loss_rnn = history_lstm['loss']
-validation_loss_rnn = history_lstm['val_loss']
-
-print("validation loss:", validation_loss_lstm)
-print("validation loss:", validation_loss_gru)
-print("validation loss:", validation_loss_rnn)
-
-
+                   verbose=0)
+end_time_rnn = time.time()
 # Dự báo trên tập kiểm tra cho LSTM, GRU, và RNN
 y_pred_lstm = best_lstm_model.predict(X_test)
 y_pred_gru = best_gru_model.predict(X_test)
@@ -239,13 +223,19 @@ print("\nMSE (RNN) for each column:")
 for i, column_name in enumerate(selected_columns[1:]):
     print(f"{column_name}: {mse_rnn[i]}")
 
- # Trực quan hóa kết quả dự báo của mô hình
+
+# in ra thời gian huấn luyện của từng mô hình
+print(f"times LSTM: {end_time_lstm - start_time_lstm}")
+print(f"times GRU: {end_time_gru - start_time_gru}")
+print(f"times RNN: {end_time_rnn - start_time_rnn}")
+
+# Trực quan hóa kết quả dự báo của mô hình
 
 
 # Vẽ đồ thị cho mô hình LSTM
 plt.figure(figsize=(15, 8))
 plt.plot(y_test[:, 0], label='Actual')
-plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction', marker="o")
+plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction')
 plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')

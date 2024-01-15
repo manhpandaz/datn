@@ -71,10 +71,10 @@ X_test, y_test = prepare_data(test_data, time_steps)
 history = History()
 # Xây dựng mô hình LSTM
 model = Sequential()
-model.add(LSTM(units=50, activation='tanh', return_sequences=True, input_shape=(
-    X_train.shape[1], X_train.shape[2])))  # Lớp LSTM thứ nhất
-model.add(Dropout(0.2))  # Thêm Dropout
-model.add(LSTM(units=32, activation='tanh'))  # Lớp LSTM thứ hai
+model.add(LSTM(units=50, activation='relu', return_sequences=True, input_shape=(
+    X_train.shape[1], X_train.shape[2])))
+model.add(Dropout(0.2))
+model.add(LSTM(units=32, activation='relu'))
 model.add(Dropout(0.2))
 model.add(Dense(units=3))
 model.compile(optimizer='adam', loss='mse')
@@ -90,19 +90,16 @@ val_loss_values = history.history['val_loss']
 # print(loss_values)
 # print("val_loss_values:", val_loss_values)
 
-# Lấy giá trị mất mát trên tập huấn luyện và tập validation từ callback history
 
 # biểu đồ biểu thị loss vaidation value
 epochs = range(1, len(loss_values) + 1)
 
 # plt.plot(epochs, loss_values, label='Training Loss', marker='o')
 plt.plot(epochs, val_loss_values, label='Validation Loss', marker='o')
-
 plt.title('Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Validation Loss Values')
 plt.legend()
-
 plt.show()
 
 # Đánh giá mô hình trên tập kiểm tra
