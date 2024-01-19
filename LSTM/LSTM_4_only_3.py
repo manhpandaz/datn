@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from keras.callbacks import ModelCheckpoint, History
+from keras.callbacks import History
 from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
-from keras.layers import LSTM, GRU, SimpleRNN, Dense, Dropout
+from keras.layers import LSTM, Dense, Dropout
 from keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -112,6 +112,17 @@ X_test, y_test = prepare_data(test_data, time_steps)
 #  tạo mô hình cho LSTM
 
 
+# def create_lstm_model(units=64, activation='relu', dropout_rate=0.2, learning_rate=0.01):
+#     model = Sequential()
+#     model.add(LSTM(units=units, activation=activation,
+#               input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=True))
+#     model.add(LSTM(units=units))
+#     model.add(Dropout(dropout_rate))
+#     model.add(Dense(units=3))
+#     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+#     model.compile(optimizer=optimizer, loss='mse')
+#     return model
+
 def create_lstm_model(units=64, activation='relu', dropout_rate=0.2, learning_rate=0.01):
     model = Sequential()
     model.add(LSTM(units=units, activation=activation,
@@ -132,9 +143,9 @@ lstm_model = KerasRegressor(
 # Định nghĩa các giá trị thử nghiệm cho các siêu tham số
 param_dist = {
     # 16, 32, 64, 128, 256
-    'units': [16, 32, 64, 128, 256],
+    'units': [64, 128, 256],
     # 'sigmoid', 'tanh', 'relu'
-    'activation': ['sigmoid', 'tanh', 'relu'],
+    'activation': ['relu'],
     # 0.1, 0.2, 0.25, 0.5
     'dropout_rate': [0.1, 0.2, 0.25, 0.5],
     # 0.001, 0.005, 0.01
@@ -158,7 +169,7 @@ best_lstm_model.fit(X_train, y_train, epochs=1000, batch_size=32,
                     validation_data=(X_test, y_test), shuffle=False, callbacks=[history_lstm], verbose=1)
 
 val_loss = history_lstm.history["val_loss"]
-
+loss = history_lstm.history["loss"]
 # print("Loss validation:", val_loss)
 
 
@@ -176,24 +187,24 @@ for i, column_name in enumerate(selected_columns[1:]):
 
 # Vẽ đồ thị cho mô hình LSTM
 plt.figure(figsize=(12, 6))
-plt.plot(y_test[:, 0], label='Actual', marker='o')
-plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction', marker='o')
+plt.plot(y_test[:, 0], label='Actual')
+plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction')
 plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
 
 plt.figure(figsize=(12, 6))
-plt.plot(y_test[:, 1], label='Actual', marker='o')
-plt.plot(y_pred_lstm[:, 1], label='LSTM Prediction', marker='o')
+plt.plot(y_test[:, 1], label='Actual')
+plt.plot(y_pred_lstm[:, 1], label='LSTM Prediction')
 plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
 
 plt.figure(figsize=(12, 6))
-plt.plot(y_test[:, 2], label='Actual', marker='o')
-plt.plot(y_pred_lstm[:, 2], label='LSTM Prediction', marker='o')
+plt.plot(y_test[:, 2], label='Actual')
+plt.plot(y_pred_lstm[:, 2], label='LSTM Prediction')
 plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
@@ -204,14 +215,25 @@ plt.tight_layout()
 plt.show()
 
 
-# loss validation
+# loss - train
 plt.figure(figsize=(12, 6))
-plt.plot(val_loss, label='Validation loss', marker='o')
+plt.plot(loss, label='loss', marker="o")
 plt.xlabel('Epochs')
-plt.ylabel('Vlidation loss value')
+plt.ylabel('Loss value')
 plt.legend()
 plt.show()
 
+# loss validation - test
+plt.figure(figsize=(12, 6))
+plt.plot(val_loss, label='Validation loss', marker="o")
+plt.xlabel('Epochs')
+plt.ylabel('Validation loss value')
+plt.legend()
+plt.show()
+
+print("Best LSTM: %f using %s" % (random_search_lstm_result.best_score_,
+      random_search_lstm_result.best_params_))
+best_lstm_model = random_search_lstm.best_estimator_.model
 
 # for i, column_name in enumerate(selected_columns[1:]):
 #     plt.figure(figsize=(15, 8))

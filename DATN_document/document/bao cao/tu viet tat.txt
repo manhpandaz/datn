@@ -1,0 +1,10 @@
+GDP : Gross Domestic Product - Tổng sản phẩm trong nước.
+NLP: Natural Language Processing - Xử lý Ngôn ngữ Tự nhiên
+MRI: Magnetic Resonance Imaging - Hình ảnh từ năng lượng từ trường
+LSTM : Long Short Term Memory networks - mạng noron ngắn hạn hạn định hướng dài hạn
+GRU : Gated Recurrent Unit - Nút Hồi tiếp có Cổng
+RNN :  Recurrent Neural Network - Mạng Nơ-ron Hồi Quy
+MSE :  Mean squared error - Sai số trung bình bình phương
+USD_W:Tỷ giá USD/VNĐ
+DT_W: Hợp đồng tương lai dầu thô WTI
+V_W: Hợp đồng tương lai vàng

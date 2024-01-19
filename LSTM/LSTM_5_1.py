@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from keras.callbacks import ModelCheckpoint, History
 from sklearn.metrics import mean_squared_error
 from keras.models import Sequential
 from keras.layers import LSTM, GRU, SimpleRNN, Dense, Dropout
@@ -146,13 +145,13 @@ rnn_model = KerasRegressor(build_fn=create_rnn_model,
 # Định nghĩa các giá trị thử nghiệm cho các siêu tham số
 param_dist = {
     # 16, 32, 64, 128, 256
-    'units': [16, 32, 64, 128, 256],
+    'units': [128, 256],
     # 'sigmoid', 'tanh', 'relu'
-    'activation': ['sigmoid', 'tanh', 'relu'],
+    'activation': ['relu'],
     # 0.1, 0.2, 0.25, 0.5
-    'dropout_rate': [0.1, 0.2, 0.25, 0.4, 0.5],
+    'dropout_rate': [0.2, 0.5],
     # 0.001, 0.005, 0.01
-    'learning_rate': [0.01, 0.001, 0.005],
+    'learning_rate': [0.01],
 }
 
 # Tìm kiếm siêu tham số bằng RandomizedSearchCV cho LSTM

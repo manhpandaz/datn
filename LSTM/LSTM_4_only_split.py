@@ -71,8 +71,9 @@ X_test, y_test = prepare_data(test_data, time_steps)
 history = History()
 # Xây dựng mô hình LSTM
 model = Sequential()
-model.add(LSTM(units=50, activation='relu', input_shape=(
-    X_train.shape[1], X_train.shape[2])))
+model.add(LSTM(units=64, activation='relu', input_shape=(
+    X_train.shape[1], X_train.shape[2]),  return_sequences=True))
+model.add(LSTM(units=64))
 model.add(Dropout(0.2))
 model.add(Dense(units=3))
 model.compile(optimizer='adam', loss='mse')
@@ -115,41 +116,86 @@ for i, column in enumerate(selected_columns[1:]):
     print(f"Mean Squared Error for Column {column}: {mse_column}")
 
 # Đảo ngược chuẩn hóa để có giá trị gốc
-y_test_inverse = scaler.inverse_transform(y_test)
-y_pred_inverse = scaler.inverse_transform(y_pred)
+# y_test_inverse = scaler.inverse_transform(y_test)
+# y_pred_inverse = scaler.inverse_transform(y_pred)
 
-# Trực quan hóa kết quả cho cột USD_W
+# # Trực quan hóa kết quả cho cột USD_W
+# plt.figure(figsize=(12, 6))
+# plt.plot(df_selected.index[-len(y_test):],
+#          y_test_inverse[:, 0], label='Actual', marker='o')
+# plt.plot(df_selected.index[-len(y_test):],
+#          y_pred_inverse[:, 0], label='Predicted', marker='o')
+# plt.title('USD_W - Actual vs. Predicted')
+# plt.xlabel('Time Steps')
+# plt.ylabel('Value')
+# plt.legend()
+# plt.show()
+
+# #  DT_W
+# plt.figure(figsize=(12, 6))
+# plt.plot(df_selected.index[-len(y_test):],
+#          y_test_inverse[:, 1], label='Actual', marker='o')
+# plt.plot(df_selected.index[-len(y_test):],
+#          y_pred_inverse[:, 1], label='Predicted', marker='o')
+# plt.title('DT_W - Actual vs. Predicted')
+# plt.xlabel('Time Steps')
+# plt.ylabel('Value')
+# plt.legend()
+# plt.show()
+
+# #  V_W
+# plt.figure(figsize=(12, 6))
+# plt.plot(df_selected.index[-len(y_test):],
+#          y_test_inverse[:, 2], label='Actual', marker='o')
+# plt.plot(df_selected.index[-len(y_test):],
+#          y_pred_inverse[:, 2], label='Predicted', marker='o')
+# plt.title('V_W - Actual vs. Predicted')
+# plt.xlabel('Time Steps')
+# plt.ylabel('Value')
+# plt.legend()
+# plt.show()
+
 plt.figure(figsize=(12, 6))
-plt.plot(df_selected.index[-len(y_test):],
-         y_test_inverse[:, 0], label='Actual', marker='o')
-plt.plot(df_selected.index[-len(y_test):],
-         y_pred_inverse[:, 0], label='Predicted', marker='o')
-plt.title('USD_W - Actual vs. Predicted')
+plt.plot(y_test[:, 0], label='Actual')
+plt.plot(y_pred_lstm[:, 0], label='LSTM Prediction')
+plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
-plt.show()
 
-#  DT_W
 plt.figure(figsize=(12, 6))
-plt.plot(df_selected.index[-len(y_test):],
-         y_test_inverse[:, 1], label='Actual', marker='o')
-plt.plot(df_selected.index[-len(y_test):],
-         y_pred_inverse[:, 1], label='Predicted', marker='o')
-plt.title('DT_W - Actual vs. Predicted')
+plt.plot(y_test[:, 1], label='Actual')
+plt.plot(y_pred_lstm[:, 1], label='LSTM Prediction')
+plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
 plt.legend()
-plt.show()
 
-#  V_W
 plt.figure(figsize=(12, 6))
-plt.plot(df_selected.index[-len(y_test):],
-         y_test_inverse[:, 2], label='Actual', marker='o')
-plt.plot(df_selected.index[-len(y_test):],
-         y_pred_inverse[:, 2], label='Predicted', marker='o')
-plt.title('V_W - Actual vs. Predicted')
+plt.plot(y_test[:, 2], label='Actual')
+plt.plot(y_pred_lstm[:, 2], label='LSTM Prediction')
+plt.title('USD_W - LSTM')
 plt.xlabel('Time Steps')
 plt.ylabel('Value')
+plt.legend()
+
+
+plt.tight_layout()
+plt.show()
+
+
+# loss - train
+plt.figure(figsize=(12, 6))
+plt.plot(loss, label='loss', marker="o")
+plt.xlabel('Epochs')
+plt.ylabel('Loss value')
+plt.legend()
+plt.show()
+
+# loss validation - test
+plt.figure(figsize=(12, 6))
+plt.plot(val_loss, label='Validation loss', marker="o")
+plt.xlabel('Epochs')
+plt.ylabel('Validation loss value')
 plt.legend()
 plt.show()
